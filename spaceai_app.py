@@ -23,8 +23,8 @@ translations = {
         2. Laufzeit in Tagen wählen
         3. Täglichen Zinssatz anpassen
         4. Reinvestition aktivieren/deaktivieren
-        5. **Eigene Gewinne generieren:** 
-            - Klicke auf das SpaceAI-Logo und melde dich jetzt an!
+        5. **_Eigene Gewinne generieren:_** 
+            - _Klicke auf das SpaceAI-Logo und melde dich jetzt an!_
         """
     },
     "en": {
@@ -58,23 +58,22 @@ DEFAULT_FILENAME = "SpaceAI_Ergebnis"
 def calculate_profit(initial_capital, days, daily_interest, reinvest):
     capital = initial_capital
     intermediate_sum = 0.0
-    daily_interest /= 100  # Prozent -> Dezimal
+    daily_interest /= 100
     development = []
 
     for day in range(1, days + 1):
-        profit = capital * daily_interest
-        intermediate_sum += profit
+        profit = round(capital * daily_interest, 2)  # Auf 2 Dezimalstellen runden
+        intermediate_sum = round(intermediate_sum + profit, 2)  # Auf 2 Dezimalstellen runden
 
         reinvested = False
         if reinvest and intermediate_sum >= INVESTMENT_THRESHOLD:
             steps = int(intermediate_sum // INVESTMENT_THRESHOLD)
-            capital += INVESTMENT_THRESHOLD * steps
-            intermediate_sum -= INVESTMENT_THRESHOLD * steps
+            capital = round(capital + INVESTMENT_THRESHOLD * steps, 2)  # Auf 2 Dezimalstellen runden
+            intermediate_sum = round(intermediate_sum - INVESTMENT_THRESHOLD * steps, 2)  # Auf 2 Dezimalstellen runden
             reinvested = True
 
         development.append((day, capital, intermediate_sum, reinvested))
     
-    # Konvertiere die Liste in ein DataFrame mit klaren Spaltentypen
     columns = ["Day", "Capital", "Accumulated", "Reinvested"] if st.session_state.lang == "en" else ["Tag", "Kapital", "Zwischensumme", "Reinvestiert"]
     development_df = pd.DataFrame(
         development,
@@ -86,7 +85,7 @@ def calculate_profit(initial_capital, days, daily_interest, reinvest):
         columns[3]: "bool"
     })
     
-    return development_df, capital, intermediate_sum
+    return development_df, round(capital, 2), round(intermediate_sum, 2)  # Endwerte runden
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="SpaceAI Rechner", layout="centered")
@@ -162,7 +161,14 @@ if st.button(lang_data["calculate"], type="primary"):
     st.info(f"**{lang_data['remaining']}** {remaining:.2f} $")
 
     with st.expander(lang_data["details"], expanded=False):
-        st.dataframe(development_df)
+        # Holen Sie sich die Spaltennamen basierend auf der Sprache
+        display_columns = ["Day", "Capital", "Accumulated", "Reinvested"] if st.session_state.lang == "en" else ["Tag", "Kapital", "Zwischensumme", "Reinvestiert"]
+        
+        # Formatierung des DataFrames mit 2 Dezimalstellen
+        st.dataframe(development_df.style.format({
+            display_columns[1]: "{:.2f}",
+            display_columns[2]: "{:.2f}"
+        }))
         st.caption(lang_data["scroll"])
 
     # Download-Button für komplette Daten
