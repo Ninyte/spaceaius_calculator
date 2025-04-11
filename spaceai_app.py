@@ -10,10 +10,10 @@ translations = {
         "start_capital": "Startkapital ($)",
         "days": "Anzahl Tage",
         "interest": "Durchschnittlicher täglicher Gewinn (%)",
-        "reinvest": "Reinvestieren (je ab 50$ Zwischensumme)",
+        "reinvest": "Reinvestieren (je 50$ angesparter Ertrag)",
         "calculate": "Berechnen",
         "final_capital": "Endkapital nach {days} Tagen:",
-        "remaining": "Verbleibende Zwischensumme:",
+        "remaining": "Nicht-reinvestierter Ertrag:",
         "details": "📈 Detailierte Kapitalentwicklung",
         "scroll": "ℹ️ Scrollen, um alle Einträge zu sehen",
         "save": "📥 Ergebnisse speichern",
@@ -45,8 +45,8 @@ translations = {
         2. Select duration in days
         3. Adjust daily interest rate
         4. Enable/disable reinvestment
-        5. **Generate your own profits:** 
-            - Click the SpaceAI-logo and sign up now!
+        5. **_Generate your own profits:_** 
+            - _Click the SpaceAI-logo and sign up now!_
         """
     }
 }
