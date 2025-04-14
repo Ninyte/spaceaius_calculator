@@ -6,10 +6,10 @@ import pandas as pd
 # Sprachdaten
 translations = {
     "de": {
-        "title": "🚀 SpaceAI Rechner",
+        "title": "Ertragssimulator",
         "start_capital": "Startkapital ($)",
-        "days": "Anzahl Tage",
-        "interest": "Durchschnittlicher täglicher Gewinn (%)",
+        "days": "Anzahl Tage (d)",
+        "interest": "Durchschnittlicher täglicher Ertrag (%)",
         "reinvest": "Reinvestieren (je 50$ angesparter Ertrag)",
         "calculate": "Berechnen",
         "final_capital": "Endkapital nach {days} Tagen:",
@@ -17,36 +17,44 @@ translations = {
         "details": "📈 Detailierte Kapitalentwicklung",
         "scroll": "ℹ️ Scrollen, um alle Einträge zu sehen",
         "save": "📥 Ergebnisse speichern",
+        "boni_stage": "Bonusstufe",
+        "bonus_options": ["S0 (+0%)", "S1 (+10%)", "S2 (+15%)", "S3 (+25%)", "S4 (+35%)", "Indiv. Bonus (%)"],
+        "custom_bonus_input": "Gib deinen Bonus (%) ein:",
         "instructions": """
         **ℹ️ Anleitung:**
-        1. Startkapital in $ eingeben
-        2. Laufzeit in Tagen wählen
-        3. Täglichen Zinssatz anpassen
-        4. Reinvestition aktivieren/deaktivieren
-        5. **_Eigene Gewinne generieren:_** 
+        1. Startkapital ($) eingeben
+        2. Laufzeit (d) wählen
+        3. Täglichen Zinssatz (%) anpassen
+        4. Wähle die entsprechende Bonusstufe
+        5. Reinvestition aktivieren/deaktivieren
+        6. **_Eigene Gewinne generieren:_** 
             - _Klicke auf das SpaceAI-Logo und melde dich jetzt an!_
         """
     },
     "en": {
-        "title": "🚀 SpaceAI Calculator",
-        "start_capital": "Initial capital ($)",
-        "days": "Number of days",
-        "interest": "Average daily profit (%)",
+        "title": "Yield Simulator",
+        "start_capital": "Initial Capital ($)",
+        "days": "Number of Days (d)",
+        "interest": "Average daily Income (%)",
         "reinvest": "Reinvest (every $50 of accumulated profit)",
         "calculate": "Calculate",
-        "final_capital": "Final capital after {days} days:",
-        "remaining": "Remaining accumulated profit:",
+        "final_capital": "Final Capital after {days} Days:",
+        "remaining": "Remaining accumulated Profit:",
         "details": "📈 Detailed Capital Development",
-        "scroll": "ℹ️ Scroll to see all entries",
-        "save": "📥 Save results",
+        "scroll": "ℹ️ Scroll to see all Entries",
+        "save": "📥 Save Results",
+        "boni_stage": "Bonus Level",
+        "bonus_options": ["S0 (+0%)", "S1 (+10%)", "S2 (+15%)", "S3 (+25%)", "S4 (+35%)", "Custom Bonus (%)"],
+        "custom_bonus_input": "Enter your Bonus (%):",
         "instructions": """
         **ℹ️ Instructions:**
-        1. Enter initial capital in $
-        2. Select duration in days
-        3. Adjust daily interest rate
-        4. Enable/disable reinvestment
-        5. **_Generate your own profits:_** 
-            - _Click the SpaceAI-logo and sign up now!_
+        1. Enter initial Capital ($)
+        2. Select Duration (d)
+        3. Adjust daily Income (%)
+        4. Select appropiate Bonus Level
+        5. Enable/Disable Reinvestment
+        6. **_Generate your own Profits:_** 
+            - _Click the SpaceAI-Logo and sign up!_
         """
     }
 }
@@ -55,21 +63,23 @@ translations = {
 INVESTMENT_THRESHOLD = 50  # Schwelle für Reinvestition
 DEFAULT_FILENAME = "SpaceAI_Ergebnis"
 
-def calculate_profit(initial_capital, days, daily_interest, reinvest):
+def calculate_profit(initial_capital, days, daily_interest, reinvest, bonus_percentage):
     capital = initial_capital
     intermediate_sum = 0.0
-    daily_interest /= 100
+    daily_interest /= 100  # Prozent in Dezimalzahl umrechnen
     development = []
 
     for day in range(1, days + 1):
-        profit = round(capital * daily_interest, 2)  # Auf 2 Dezimalstellen runden
-        intermediate_sum = round(intermediate_sum + profit, 2)  # Auf 2 Dezimalstellen runden
+        # Berechne den Grundgewinn und wende den Bonuszuschlag an
+        profit = round(capital * daily_interest, 2)
+        profit = round(profit * (1 + bonus_percentage / 100), 2)
+        intermediate_sum = round(intermediate_sum + profit, 2)
 
         reinvested = False
         if reinvest and intermediate_sum >= INVESTMENT_THRESHOLD:
             steps = int(intermediate_sum // INVESTMENT_THRESHOLD)
-            capital = round(capital + INVESTMENT_THRESHOLD * steps, 2)  # Auf 2 Dezimalstellen runden
-            intermediate_sum = round(intermediate_sum - INVESTMENT_THRESHOLD * steps, 2)  # Auf 2 Dezimalstellen runden
+            capital = round(capital + INVESTMENT_THRESHOLD * steps, 2)
+            intermediate_sum = round(intermediate_sum - INVESTMENT_THRESHOLD * steps, 2)
             reinvested = True
 
         development.append((day, capital, intermediate_sum, reinvested))
@@ -85,10 +95,13 @@ def calculate_profit(initial_capital, days, daily_interest, reinvest):
         columns[3]: "bool"
     })
     
-    return development_df, round(capital, 2), round(intermediate_sum, 2)  # Endwerte runden
+    return development_df, round(capital, 2), round(intermediate_sum, 2)
 
 # --- Streamlit UI ---
-st.set_page_config(page_title="SpaceAI Rechner", layout="centered")
+st.set_page_config(page_title="SpaceAI Simulation", layout="centered",
+    menu_items={
+        'About': 'https://linktr.ee/SpaceAI_oi'
+    })
 
 # Custom CSS für die Sidebar (nur die Sidebar betreffend)
 st.markdown("""
@@ -110,18 +123,32 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Sprachauswahl in der Sidebar
-with st.sidebar:
-    # Spracheinstellung
-    st.markdown("<p style='color: white; font-size: 16px; font-weight: normal; margin-bottom: -10px;'>Sprache / Language</p>", unsafe_allow_html=True)
+# Spracheinstellung: Rechtsbündig oberhalb des Rechners
+col_lang_left, col_lang_right = st.columns([3, 1])
+with col_lang_left:
     lang = st.radio(
-    "Sprache / Language",  # Nicht-leeres Label für Accessibility
-    ["Deutsch", "English"],
-    index=0,
-    label_visibility="collapsed"  # Visuell verstecken, aber für Screenreader vorhanden
+        "Sprachen / Language",
+        ["deutsch", "english"],
+        index=1, # <-- 0=de, 1=en
+        horizontal=True,
+        label_visibility="collapsed"
     )
-    st.session_state.lang = "de" if lang == "Deutsch" else "en"
+    st.session_state.lang = "de" if lang == "deutsch" else "en"
 
+# Zusätzlich mittig oberhalb des Rechners: Logo mit Link
+st.markdown(
+    """
+    <div style="text-align: center; margin-bottom: 20px;">
+        <a href="https://app.spaceaius.com/#/pages/login/login?invitationCode=7765924035" target="_blank">
+            <img src="https://app.spaceaius.com/static/login/title.png" width="150">
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Anweisungen aus der Sidebar (unverändert in der Sidebar)
+with st.sidebar:
     # Logo mit Link über der Anleitung
     st.markdown(
         """
@@ -148,12 +175,40 @@ initial_capital = col1.number_input(lang_data["start_capital"], min_value=0.0, v
 days = col2.number_input(lang_data["days"], min_value=1, value=90)
 
 daily_interest = st.slider(lang_data["interest"], min_value=0.4, max_value=2.7, value=0.8, step=0.1)
+
+# Neuer Radiobutton-Bereich für den Bonuszuschlag unterhalb des Schiebereglers
+bonus_option = st.radio(
+    lang_data["boni_stage"],
+    options=lang_data["bonus_options"],  # Hier wird die Übersetzung verwendet
+    index=0,
+    horizontal=True
+)
+if any(x in bonus_option for x in ["Individueller", "Custom"]):  # Sprachunabhängige Überprüfung
+    custom_bonus = st.number_input(
+        lang_data["custom_bonus_input"],  # Übersetzte Eingabeaufforderung
+        min_value=0, 
+        max_value=100, 
+        step=5, 
+        value=0
+    )
+    bonus_percentage = custom_bonus
+elif bonus_option.startswith("S0"):
+    bonus_percentage = 0
+elif bonus_option.startswith("S1"):
+    bonus_percentage = 10
+elif bonus_option.startswith("S2"):
+    bonus_percentage = 15
+elif bonus_option.startswith("S3"):
+    bonus_percentage = 25
+elif bonus_option.startswith("S4"):
+    bonus_percentage = 35
+
 reinvest = st.checkbox(lang_data["reinvest"], value=True)
 
 # Berechnung starten
 if st.button(lang_data["calculate"], type="primary"):
     development_df, final_capital, remaining = calculate_profit(
-        initial_capital, days, daily_interest, reinvest
+        initial_capital, days, daily_interest, reinvest, bonus_percentage
     )
 
     # Ergebnisse anzeigen
@@ -161,10 +216,7 @@ if st.button(lang_data["calculate"], type="primary"):
     st.info(f"**{lang_data['remaining']}** {remaining:.2f} $")
 
     with st.expander(lang_data["details"], expanded=False):
-        # Holen Sie sich die Spaltennamen basierend auf der Sprache
         display_columns = ["Day", "Capital", "Accumulated", "Reinvested"] if st.session_state.lang == "en" else ["Tag", "Kapital", "Zwischensumme", "Reinvestiert"]
-        
-        # Formatierung des DataFrames mit 2 Dezimalstellen
         st.dataframe(development_df.style.format({
             display_columns[1]: "{:.2f}",
             display_columns[2]: "{:.2f}"
@@ -173,10 +225,10 @@ if st.button(lang_data["calculate"], type="primary"):
 
     # Download-Button für komplette Daten
     output = StringIO()
-    output.write(f"Start capital: {initial_capital} $\nDays: {days}\nInterest rate: {daily_interest} %\n\n" if st.session_state.lang == "en" else f"Startkapital: {initial_capital} $\nTage: {days}\nZinssatz: {daily_interest} %\n\n")
+    output.write(f"Start capital: {initial_capital} $\nDays: {days}\nInterest rate: {daily_interest} %\nBonus: {bonus_percentage} %\n\n" if st.session_state.lang == "en" else f"Startkapital: {initial_capital} $\nTage: {days}\nZinssatz: {daily_interest} %\nBonus: {bonus_percentage} %\n\n")
     
-    columns = ["Day | Capital | Accumulated | Reinvested\n" if st.session_state.lang == "en" else "Tag | Kapital | Zwischensumme | Reinvestiert\n"]
-    output.write(columns[0])
+    columns_header = "Day | Capital | Accumulated | Reinvested\n" if st.session_state.lang == "en" else "Tag | Kapital | Zwischensumme | Reinvestiert\n"
+    output.write(columns_header)
     output.write("-" * 40 + "\n")
     
     for _, row in development_df.iterrows():
