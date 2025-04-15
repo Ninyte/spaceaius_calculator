@@ -174,7 +174,7 @@ col1, col2 = st.columns(2)
 initial_capital = col1.number_input(lang_data["start_capital"], min_value=0.0, value=950.0)
 days = col2.number_input(lang_data["days"], min_value=1, value=90)
 
-daily_interest = st.slider(lang_data["interest"], min_value=0.4, max_value=2.7, value=0.8, step=0.1)
+daily_interest = st.slider(lang_data["interest"], min_value=0.40, max_value=2.70, value=1.32, step=0.01)
 
 # Neuer Radiobutton-Bereich für den Bonuszuschlag unterhalb des Schiebereglers
 bonus_option = st.radio(
