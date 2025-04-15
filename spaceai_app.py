@@ -15,7 +15,7 @@ translations = {
         "reinvest": "Reinvestieren (je 50$ angesparter Ertrag)",
         "calculate": "Berechnen",
         "final_capital": "Endkapital nach {days} Tagen:",
-        "remaining": "Nicht-reinvestierter Ertrag:",
+        "remaining": "Zusätzlicher nicht-reinvestierter Ertrag:",
         "details": "📈 Detailierte Kapitalentwicklung",
         "scroll": "ℹ️ Scrollen, um alle Einträge zu sehen",
         "save": "📥 Ergebnisse speichern",
@@ -25,7 +25,8 @@ translations = {
         "total_profit": "Gesamtgewinn",
         "capital_growth": "Kapitalwachstum",
         "non_reinvested": "davon nicht-reinvestiert",
-        "filename": "SpaceAI_Ergebnis",        
+        "filename": "SpaceAI_Ergebnis",     
+        "net_profit": "Reingewinn",    
         "instructions": """
         **ℹ️ Anleitung:**
         1. Startkapital ($) eingeben
@@ -47,7 +48,7 @@ translations = {
         "reinvest": "Reinvest (every $50 of accumulated Income)",
         "calculate": "Calculate",
         "final_capital": "Final Capital after {days} Days:",
-        "remaining": "Remaining accumulated Income:",
+        "remaining": "Additional remaining accumulated Income:",
         "details": "📈 Detailed Capital Development",
         "scroll": "ℹ️ Scroll to see all Entries",
         "save": "📥 Save Results",
@@ -57,7 +58,8 @@ translations = {
         "total_profit": "Total Profit",
         "capital_growth": "Capital Growth",
         "non_reinvested": "thereof Non-Reinvested",
-        "filename": "SpaceAI_Result",        
+        "filename": "SpaceAI_Result",  
+        "net_profit": "Net Profit",     
         "instructions": """
         **ℹ️ Instructions:**
         1. Enter initial Capital ($)
@@ -236,8 +238,10 @@ if st.button(lang_data["calculate"], type="primary"):
     )
 
     # Ergebnisse anzeigen
-    st.success(f"**{lang_data['final_capital'].format(days=days)}** {final_capital:.2f} $")
-    st.info(f"**{lang_data['remaining']}** {remaining:.2f} $")
+    st.info(f"**{lang_data['final_capital'].format(days=days)}** {final_capital:.2f} $")
+    st.warning(f"**{lang_data['remaining']}** {remaining:.2f} $")
+    net_profit = final_capital - initial_capital + remaining
+    st.success(f"**{lang_data['net_profit']}:** {net_profit:.2f} $")  # Nutzt die Übersetzung
 
     with st.expander(lang_data["details"], expanded=False):
         display_columns = ["Day", "Capital", "Accumulated", "Reinvested"] if st.session_state.lang == "en" else ["Tag", "Kapital", "Zwischensumme", "Reinvestiert"]
