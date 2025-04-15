@@ -7,9 +7,11 @@ import pandas as pd
 translations = {
     "de": {
         "title": "Ertragssimulator",
+        "title_help": "Simuliert Kapitalentwicklung basierend auf täglichen Erträgen und Bonuszuschlägen.",
         "start_capital": "Startkapital ($)",
         "days": "Anzahl Tage (d)",
         "interest": "Durchschnittlicher täglicher Ertrag (%)",
+        "interest_help": "Der vorgegebene Prozentsatz entspricht dem ermittelten Durchschnittsertrag.",
         "reinvest": "Reinvestieren (je 50$ angesparter Ertrag)",
         "calculate": "Berechnen",
         "final_capital": "Endkapital nach {days} Tagen:",
@@ -20,6 +22,10 @@ translations = {
         "boni_stage": "Bonusstufe",
         "bonus_options": ["S0 (+0%)", "S1 (+10%)", "S2 (+15%)", "S3 (+25%)", "S4 (+35%)", "Indiv. Bonus (%)"],
         "custom_bonus_input": "Gib deinen Bonus (%) ein:",
+        "total_profit": "Gesamtgewinn",
+        "capital_growth": "Kapitalwachstum",
+        "non_reinvested": "davon nicht-reinvestiert",
+        "filename": "SpaceAI_Ergebnis",        
         "instructions": """
         **ℹ️ Anleitung:**
         1. Startkapital ($) eingeben
@@ -33,19 +39,25 @@ translations = {
     },
     "en": {
         "title": "Yield Simulator",
+        "title_help": "Simulates Capital Growth based on daily Yields and Bonus Levels.",
         "start_capital": "Initial Capital ($)",
         "days": "Number of Days (d)",
         "interest": "Average daily Income (%)",
-        "reinvest": "Reinvest (every $50 of accumulated profit)",
+        "interest_help": "The predefined Percentage reflects the calculated average Income.",
+        "reinvest": "Reinvest (every $50 of accumulated Income)",
         "calculate": "Calculate",
         "final_capital": "Final Capital after {days} Days:",
-        "remaining": "Remaining accumulated Profit:",
+        "remaining": "Remaining accumulated Income:",
         "details": "📈 Detailed Capital Development",
         "scroll": "ℹ️ Scroll to see all Entries",
         "save": "📥 Save Results",
         "boni_stage": "Bonus Level",
         "bonus_options": ["S0 (+0%)", "S1 (+10%)", "S2 (+15%)", "S3 (+25%)", "S4 (+35%)", "Custom Bonus (%)"],
         "custom_bonus_input": "Enter your Bonus (%):",
+        "total_profit": "Total Profit",
+        "capital_growth": "Capital Growth",
+        "non_reinvested": "thereof Non-Reinvested",
+        "filename": "SpaceAI_Result",        
         "instructions": """
         **ℹ️ Instructions:**
         1. Enter initial Capital ($)
@@ -53,7 +65,7 @@ translations = {
         3. Adjust daily Income (%)
         4. Select appropiate Bonus Level
         5. Enable/Disable Reinvestment
-        6. **_Generate your own Profits:_** 
+        6. **_Generate your own Income:_** 
             - _Click the SpaceAI-Logo and sign up!_
         """
     }
@@ -166,15 +178,27 @@ with st.sidebar:
 # Aktuelle Sprache
 lang_data = translations[st.session_state.lang]
 
-# Titel
-st.title(lang_data["title"])
+# Titel als Header (mit Hilfe-Symbol):
+st.header(
+    lang_data["title"], 
+    help=lang_data["title_help"]  # Tooltip hier
+)
 
 # Eingabefelder
 col1, col2 = st.columns(2)
 initial_capital = col1.number_input(lang_data["start_capital"], min_value=0.0, value=950.0)
 days = col2.number_input(lang_data["days"], min_value=1, value=90)
 
-daily_interest = st.slider(lang_data["interest"], min_value=0.40, max_value=2.70, value=1.32, step=0.01)
+
+# Slider mit Hilfe-Parameter anpassen
+daily_interest = st.slider(
+    lang_data["interest"], 
+    min_value=0.40, 
+    max_value=2.70, 
+    value=1.32, 
+    step=0.01,
+    help=lang_data["interest_help"]  # Hier kommt der Tooltip
+)
 
 # Neuer Radiobutton-Bereich für den Bonuszuschlag unterhalb des Schiebereglers
 bonus_option = st.radio(
@@ -223,23 +247,76 @@ if st.button(lang_data["calculate"], type="primary"):
         }))
         st.caption(lang_data["scroll"])
 
-    # Download-Button für komplette Daten
+    # --- Textdatei-Generierung (optimiert) ---
     output = StringIO()
-    output.write(f"Start capital: {initial_capital} $\nDays: {days}\nInterest rate: {daily_interest} %\nBonus: {bonus_percentage} %\n\n" if st.session_state.lang == "en" else f"Startkapital: {initial_capital} $\nTage: {days}\nZinssatz: {daily_interest} %\nBonus: {bonus_percentage} %\n\n")
-    
-    columns_header = "Day | Capital | Accumulated | Reinvested\n" if st.session_state.lang == "en" else "Tag | Kapital | Zwischensumme | Reinvestiert\n"
-    output.write(columns_header)
-    output.write("-" * 40 + "\n")
-    
-    for _, row in development_df.iterrows():
-        if st.session_state.lang == "en":
-            output.write(f"{row['Day']} | {row['Capital']:.2f} $ | {row['Accumulated']:.2f} $ | {'✅' if row['Reinvested'] else '❌'}\n")
-        else:
-            output.write(f"{row['Tag']} | {row['Kapital']:.2f} $ | {row['Zwischensumme']:.2f} $ | {'✅' if row['Reinvestiert'] else '❌'}\n")
+    col_width = 15  # Feste Spaltenbreite für die Tabelle
 
+    # Kopfbereich
+    output.write(f"{'=' * 50}\n")
+    output.write(f"{lang_data['title'].upper():^50}\n")
+    output.write(f"{'=' * 50}\n\n")
+
+    # Parameter
+    param_header = ["PARAMETER", "VALUE"] if st.session_state.lang == "en" else ["PARAMETER", "WERT"]
+    output.write(f"{param_header[0]:<20} {param_header[1]:<30}\n")
+    output.write("-" * 50 + "\n")
+    output.write(f"{lang_data['start_capital'] + ':':<20} {initial_capital:.2f} $\n")
+    output.write(f"{lang_data['days'] + ':':<20} {days}\n")
+    output.write(f"{lang_data['interest'] + ':':<20} {daily_interest:.2f} %\n")
+    output.write(f"{lang_data['boni_stage'] + ':':<20} {bonus_option} (+{bonus_percentage} %)\n")
+    output.write(f"{lang_data['reinvest'] + ':':<20} {'✅' if reinvest else '❌'}\n\n")
+
+    # Tabelle
+    columns = development_df.columns.tolist()
+    output.write(f"{'DATA TABLE':^50}\n")
+    output.write("-" * 50 + "\n")
+    header = (
+        f"{columns[0]:<{col_width}}"
+        f"{columns[1]:>{col_width}}"
+        f"{columns[2]:>{col_width}}"
+        f"{columns[3]:^{col_width}}"
+    )
+    output.write(header + "\n")
+    output.write("-" * 50 + "\n")
+
+    for _, row in development_df.iterrows():
+        day = str(row[columns[0]])
+        capital = f"{row[columns[1]]:.2f} $"
+        accumulated = f"{row[columns[2]]:.2f} $"
+        reinvested = "✅" if row[columns[3]] else "❌"
+        
+        line = (
+            f"{day:<{col_width}}"
+            f"{capital:>{col_width}}"
+            f"{accumulated:>{col_width}}"
+            f"{reinvested:^{col_width}}"
+        )
+        output.write(line + "\n")
+
+    # Zusammenfassung
+    total_profit = (final_capital - initial_capital) + remaining
+    capital_growth = final_capital - initial_capital
+    non_reinvested = remaining
+
+    output.write("\n" + "=" * 50 + "\n")
+    output.write(f"{'SUMMARY':^50}\n")
+    output.write("-" * 50 + "\n")
+    output.write(f"{lang_data['total_profit'] + ':':<25} {total_profit:.2f} $\n")
+    output.write(f"{lang_data['non_reinvested'] + ':':<25} {non_reinvested:.2f} $\n")
+
+    # Footer
+    output.write("\n" + "=" * 50 + "\n")
+    output.write(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+
+    # Download-Button mit sprachabhängigem Dateinamen
+    file_name = (
+        f"{lang_data['filename']}_"
+        f"{datetime.date.today().strftime('%Y-%m-%d')}.txt"
+    )
+    
     st.download_button(
         label=lang_data["save"],
         data=output.getvalue(),
-        file_name=f"{DEFAULT_FILENAME}_{datetime.date.today().strftime('%Y-%m-%d')}.txt",
+        file_name=file_name,
         mime="text/plain"
     )
