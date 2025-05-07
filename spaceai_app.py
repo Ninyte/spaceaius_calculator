@@ -127,6 +127,15 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
             profit = int(round(profit * (1 + bonus_percentage / 100)))
             intermediate_sum += profit
 
+        # Flyt kapital fra Pulje 1 til Pulje 2, hvis Pulje 1 er fuld, og der er nok i Akkumuleret
+        if pool1_capital == POOL1_MAX and intermediate_sum >= 50:
+            intermediate_sum += pool1_capital  # Flyt Pulje 1 til Akkumuleret
+            pool1_capital = 0
+            if intermediate_sum >= POOL2_MIN:  # Reinvester i Pulje 2
+                pool2_capital += intermediate_sum
+                intermediate_sum = 0
+                pool2_start_day = day + 1  # Reinvestering i Pulje 2 starter dagen efter
+
         # Reinvestering (uden prioritering, men med minimumsgrænser)
         if reinvest and intermediate_sum >= INVESTMENT_THRESHOLD:
             if intermediate_sum >= POOL3_MIN and pool3_capital < POOL3_MAX:
@@ -161,11 +170,11 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
         columns=columns
     ).astype({
         columns[0]: "int32",
-        columns[1]: "int32",
-        columns[2]: "int32",
-        columns[3]: "int32",
-        columns[4]: "int32",
-        columns[5]: "int32"
+        columns[1]: "float64",
+        columns[2]: "float64",
+        columns[3]: "float64",
+        columns[4]: "float64",
+        columns[5]: "float64"
     })
 
     return development_df, pool1_capital, pool2_capital, pool3_capital, assets, intermediate_sum
