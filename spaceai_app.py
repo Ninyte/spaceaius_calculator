@@ -12,7 +12,7 @@ translations = {
         "days": "Antal dage (d)",
         "interest": "Gennemsnitligt dagligt afkast (%)",
         "interest_help": "Den forudindstillede procentdel afspejler det beregnede gennemsnitlige afkast.",
-        "reinvest": "Geninvester (for hver 50$ akkumuleret afkast)",
+        "reinvest": "Geninvester (når akkumuleret afkast > 50 $)",
         "calculate": "Beregn",
         "final_capital": "Slutkapital efter {days} dage:",
         "remaining": "Yderligere resterende akkumuleret afkast:",
