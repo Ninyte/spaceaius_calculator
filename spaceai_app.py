@@ -212,7 +212,6 @@ with col_lang_left:
 st.markdown(
     """
     <div style="text-align: center; margin-bottom: 20px;">
-        <a href="https://app.spaceaius.com/#/pages/login/login?invitationCode=7765924035" target="_blank">
             <img src="https://app.spaceaius.com/static/login/title.png" width="150">
         </a>
     </div>
@@ -226,7 +225,6 @@ with st.sidebar:
     st.markdown(
         """
         <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
-            <a href="https://app.spaceaius.com/#/pages/login/login?invitationCode=7765924035" target="_blank">
                 <img src="https://app.spaceaius.com/static/login/title.png" width="150">
             </a>
         </div>
