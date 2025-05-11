@@ -87,7 +87,7 @@ def calculate_pool_profit(initial_capital, days, daily_interest, reinvest, bonus
 
     return development_df, round(capital, 2), round(intermediate_sum, 2)
 
-def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, reinvest, bonus_percentage):
+def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, reinvest, bonus_percentage, salary_count=0):
     pool3_capital = int(min(initial_capital, POOL3_MAX)) if initial_capital >= POOL3_MIN else 0
     remaining_capital = int(max(0, initial_capital - pool3_capital))
     pool2_capital = int(min(remaining_capital, POOL2_MAX)) if remaining_capital >= POOL2_MIN else 0
@@ -102,6 +102,9 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
     pool1_start_day = 1 if pool1_capital > 0 else None
     pool2_start_day = 1 if pool2_capital > 0 else None
     pool3_start_day = 1 if pool3_capital > 0 else None
+
+    # Salary-dage: hver 7. dag, op til salary_count gange
+    salary_days = [(i + 1) * 7 for i in range(salary_count)]
 
     for day in range(1, days + 1):
         # Gem startværdier for puljer før dagens investeringer
@@ -120,6 +123,12 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
         if pool1_capital_start > 0 and day > (pool1_start_day or 0):
             profit = round(pool1_capital_start * daily_interest * (1 + bonus_percentage / 100), 2)
             daily_profit += profit
+
+        # --- Salary tillæg ---
+        salary_added = 0
+        if day in salary_days:
+            intermediate_sum += 10
+            salary_added = 10
 
         # Akkumuleret afkast FØR investeringer
         accum_before = intermediate_sum + daily_profit
@@ -208,12 +217,13 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
             int(pool3_capital),
             round(daily_profit, 2),           # Dagens afkast
             float(accum_before),              # Akkumuleret før investeringer
-            float(accum_after)                # Akkumuleret efter investeringer
+            float(accum_after),               # Akkumuleret efter investeringer
+            salary_added                      # Salary tillagt denne dag (ny kolonne)
         ))
 
     columns = [
         "Dag", "Pulje 1", "Pulje 2", "Pulje 3",
-        "Dagens Afkast", "Akk. Før", "Akk. Efter"
+        "Dagens Afkast", "Akk. Før", "Akk. Efter", "Salary"
     ]
     development_df = pd.DataFrame(
         development,
@@ -225,7 +235,8 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
         columns[3]: "float64",
         columns[4]: "float64",
         columns[5]: "float64",
-        columns[6]: "float64"
+        columns[6]: "float64",
+        columns[7]: "float64"
     })
 
     return development_df, pool1_capital, pool2_capital, pool3_capital, intermediate_sum
@@ -291,10 +302,10 @@ st.header(
 )
 
 # Inputfelter
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 initial_capital = col1.number_input(lang_data["start_capital"], min_value=0.0, value=950.0)
 days = col2.number_input(lang_data["days"], min_value=1, value=90)
-
+salary_count = col3.number_input("Antal gange 'salary' modtaget", min_value=0, value=0, help="Indtast hvor mange gange du har fået 'salary' (f.eks. 4 for 4 uger)")
 
 # Slider med justeret hjælpeparameter
 daily_interest = st.slider(
@@ -339,7 +350,7 @@ reinvest = st.checkbox(lang_data["reinvest"], value=True)
 if st.button(lang_data["calculate"], type="primary"):
     # Calculate across all pools
     development_df, pool1_final, pool2_final, pool3_final, total_accumulated = calculate_pool_profit_with_assets(
-        initial_capital, days, daily_interest, reinvest, bonus_percentage
+        initial_capital, days, daily_interest, reinvest, bonus_percentage, salary_count
     )
 
     # Display results
@@ -352,13 +363,14 @@ if st.button(lang_data["calculate"], type="primary"):
     # Display detailed development
     with st.expander(lang_data["details"], expanded=False):
         st.dataframe(
-            development_df[["Dag", "Pulje 1", "Pulje 2", "Pulje 3", "Dagens Afkast", "Akk. Før", "Akk. Efter"]].style.format({
+            development_df[["Dag", "Pulje 1", "Pulje 2", "Pulje 3", "Dagens Afkast", "Akk. Før", "Akk. Efter", "Salary"]].style.format({
                 "Pulje 1": "{:.2f}",
                 "Pulje 2": "{:.2f}",
                 "Pulje 3": "{:.2f}",
                 "Dagens Afkast": "{:.2f}",
                 "Akk. Før": "{:.2f}",
-                "Akk. Efter": "{:.2f}"
+                "Akk. Efter": "{:.2f}",
+                "Salary": "{:.2f}"
             })
         )
 
