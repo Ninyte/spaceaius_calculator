@@ -123,8 +123,8 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
 
         salary_added = 0
         if day in salary_days:
-            intermediate_sum += 10
-            salary_added = 10
+            intermediate_sum += 9
+            salary_added = 9
 
         accum_before = intermediate_sum + daily_profit
         intermediate_sum += daily_profit
