@@ -103,16 +103,13 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
     pool2_start_day = 1 if pool2_capital > 0 else None
     pool3_start_day = 1 if pool3_capital > 0 else None
 
-    # Salary-dage: hver 7. dag, op til salary_count gange
     salary_days = [(i + 1) * 7 for i in range(salary_count)]
 
     for day in range(1, days + 1):
-        # Gem startværdier for puljer før dagens investeringer
         pool1_capital_start = pool1_capital
         pool2_capital_start = pool2_capital
         pool3_capital_start = pool3_capital
 
-        # 1. Beregn afkast for alle puljer FØR investeringer denne dag
         daily_profit = 0
         if pool3_capital_start > 0 and day > (pool3_start_day or 0):
             profit = round(pool3_capital_start * daily_interest * (1 + bonus_percentage / 100), 2)
@@ -124,21 +121,18 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
             profit = round(pool1_capital_start * daily_interest * (1 + bonus_percentage / 100), 2)
             daily_profit += profit
 
-        # --- Salary tillæg ---
         salary_added = 0
         if day in salary_days:
             intermediate_sum += 10
             salary_added = 10
 
-        # Akkumuleret afkast FØR investeringer
         accum_before = intermediate_sum + daily_profit
-
-        # Læg dagligt afkast til intermediate_sum EFTER det er summeret
         intermediate_sum += daily_profit
         total_daily_profits += daily_profit
 
-        # 2. Reinvestér ALT muligt i pulje 1 hvis der er over 50 USD og plads (EFTER afkast er beregnet)
+        # Kun geninvestering og udtræk hvis reinvest er True
         if reinvest:
+            # Reinvestér ALT muligt i pulje 1 hvis der er over 50 USD og plads
             while intermediate_sum >= INVESTMENT_THRESHOLD and pool1_capital < POOL1_MAX:
                 invest = min(POOL1_MAX - pool1_capital, intermediate_sum)
                 invest = int(invest)
@@ -147,23 +141,22 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
                 if pool1_start_day is None and pool1_capital > 0:
                     pool1_start_day = day + 1
 
-        # 3. Hvis pulje 1 er fuld og der er mindst 50 USD, træk 950 ud og læg til intermediate_sum
-        if pool1_capital == POOL1_MAX and intermediate_sum >= INVESTMENT_THRESHOLD:
-            intermediate_sum += pool1_capital
-            pool1_capital = 0
-            pool1_start_day = None
+            # Hvis pulje 1 er fuld og der er mindst 50 USD, træk 950 ud og læg til intermediate_sum
+            if pool1_capital == POOL1_MAX and intermediate_sum >= INVESTMENT_THRESHOLD:
+                intermediate_sum += pool1_capital
+                pool1_capital = 0
+                pool1_start_day = None
 
-            # 4. Invester ALT muligt i pulje 2 hvis der er mindst 1000 USD
-            if intermediate_sum >= POOL2_MIN:
-                invest = min(POOL2_MAX - pool2_capital, intermediate_sum)
-                invest = int(invest)
-                pool2_capital += invest
-                intermediate_sum -= invest
-                if pool2_start_day is None and pool2_capital > 0:
-                    pool2_start_day = day + 1
+                # Invester ALT muligt i pulje 2 hvis der er mindst 1000 USD
+                if intermediate_sum >= POOL2_MIN:
+                    invest = min(POOL2_MAX - pool2_capital, intermediate_sum)
+                    invest = int(invest)
+                    pool2_capital += invest
+                    intermediate_sum -= invest
+                    if pool2_start_day is None and pool2_capital > 0:
+                        pool2_start_day = day + 1
 
-            # 5. Efter evt. pulje 2-investering, reinvester igen i pulje 1 hvis muligt
-            if reinvest:
+                # Efter evt. pulje 2-investering, reinvester igen i pulje 1 hvis muligt
                 while intermediate_sum >= INVESTMENT_THRESHOLD and pool1_capital < POOL1_MAX:
                     invest = min(POOL1_MAX - pool1_capital, intermediate_sum)
                     invest = int(invest)
@@ -172,23 +165,22 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
                     if pool1_start_day is None and pool1_capital > 0:
                         pool1_start_day = day + 1
 
-        # --- NYT: Flyt 9000 fra pulje 2 til pulje 3 hvis pulje 2 er fuld og >= 1000 i intermediate_sum ---
-        if pool2_capital == POOL2_MAX and intermediate_sum >= POOL2_MIN:
-            intermediate_sum += pool2_capital
-            pool2_capital = 0
-            pool2_start_day = None
+            # Flyt 9000 fra pulje 2 til pulje 3 hvis pulje 2 er fuld og >= 1000 i intermediate_sum
+            if pool2_capital == POOL2_MAX and intermediate_sum >= POOL2_MIN:
+                intermediate_sum += pool2_capital
+                pool2_capital = 0
+                pool2_start_day = None
 
-            # Invester ALT muligt i pulje 3 hvis der er mindst 10000 USD
-            if intermediate_sum >= POOL3_MIN:
-                invest = min(POOL3_MAX - pool3_capital, intermediate_sum)
-                invest = int(invest)
-                pool3_capital += invest
-                intermediate_sum -= invest
-                if pool3_start_day is None and pool3_capital > 0:
-                    pool3_start_day = day + 1
+                # Invester ALT muligt i pulje 3 hvis der er mindst 10000 USD
+                if intermediate_sum >= POOL3_MIN:
+                    invest = min(POOL3_MAX - pool3_capital, intermediate_sum)
+                    invest = int(invest)
+                    pool3_capital += invest
+                    intermediate_sum -= invest
+                    if pool3_start_day is None and pool3_capital > 0:
+                        pool3_start_day = day + 1
 
-            # Efter evt. pulje 3-investering, reinvester igen i pulje 1 og pulje 2 hvis muligt
-            if reinvest:
+                # Efter evt. pulje 3-investering, reinvester igen i pulje 1 og pulje 2 hvis muligt
                 # Pulje 2 først
                 while intermediate_sum >= POOL2_MIN and pool2_capital < POOL2_MAX:
                     invest = min(POOL2_MAX - pool2_capital, intermediate_sum)
@@ -206,19 +198,17 @@ def calculate_pool_profit_with_assets(initial_capital, days, daily_interest, rei
                     if pool1_start_day is None and pool1_capital > 0:
                         pool1_start_day = day + 1
 
-        # Akkumuleret afkast EFTER investeringer
         accum_after = intermediate_sum
 
-        # Registrer daglig udvikling
         development.append((
             day,
             int(pool1_capital),
             int(pool2_capital),
             int(pool3_capital),
-            round(daily_profit, 2),           # Dagens afkast
-            float(accum_before),              # Akkumuleret før investeringer
-            float(accum_after),               # Akkumuleret efter investeringer
-            salary_added                      # Salary tillagt denne dag (ny kolonne)
+            round(daily_profit, 2),
+            float(accum_before),
+            float(accum_after),
+            salary_added
         ))
 
     columns = [
